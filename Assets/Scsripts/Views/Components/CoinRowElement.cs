@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using UnityEngine;
 using UnityEngine.UIElements;
 using Cripto.Game.Models;
@@ -24,6 +25,7 @@ namespace Cripto.Game.Views.Components
         private readonly Label _holdings;
         private readonly Button _buyBtn;
         private readonly Button _sellBtn;
+        private readonly TextField _qtyField;
         private readonly Cripto.Game.Views.LineChartElement _chart;
 
         // State
@@ -33,12 +35,16 @@ namespace Cripto.Game.Views.Components
         private readonly int _capacity;
 
         // Callbacks provided by parent (MarketView)
-        private Action<string> _onBuy;
-        private Action<string> _onSell;
+        private Action<string, decimal> _onBuy;
+        private Action<string, decimal> _onSell;
 
-        public new class UxmlFactory : UxmlFactory<CoinRowElement, UxmlTraits> { }
+        public new class UxmlFactory : UxmlFactory<CoinRowElement, UxmlTraits>
+        {
+        }
 
-        public CoinRowElement() : this(200) {}
+        public CoinRowElement() : this(200)
+        {
+        }
 
         public CoinRowElement(int historyCapacity = 200)
         {
@@ -48,12 +54,14 @@ namespace Cripto.Game.Views.Components
             _name = CreateNameLabel();
             _price = CreatePriceLabel();
             _holdings = CreateHoldingsLabel();
-            _buyBtn = CreateActionButton("Buy 10", () => _onBuy?.Invoke(_coinId));
-            _sellBtn = CreateActionButton("Sell 10", () => _onSell?.Invoke(_coinId));
+            _qtyField = CreateQuantityField();
+            _buyBtn = CreateActionButton("خرید", OnBuyClicked);
+            _sellBtn = CreateActionButton("فروش", OnSellClicked);
             _chart = CreateChart();
         }
 
-        public void Bind(string coinId, string name, CoinCategory category, Action<string> onBuy, Action<string> onSell)
+        public void Bind(string coinId, string name, CoinCategory category, Action<string, decimal> onBuy,
+            Action<string, decimal> onSell)
         {
             _coinId = coinId;
             _category = category;
@@ -73,7 +81,7 @@ namespace Cripto.Game.Views.Components
 
         public void UpdateHoldings(decimal quantity)
         {
-            _holdings.text = $"Qty: {quantity}";
+            _holdings.text = $"مقدار: {quantity}";
         }
 
         // Expose a copy of current history so detail page can continue the same chart
@@ -115,7 +123,7 @@ namespace Cripto.Game.Views.Components
         private Label CreateHoldingsLabel()
         {
             var line = this[0] as VisualElement;
-            var holdings = new Label("Qty: 0") { style = { width = HoldingsWidth } };
+            var holdings = new Label("مقدار: 0") { style = { width = HoldingsWidth } };
             line?.Add(holdings);
             return holdings;
         }
@@ -128,6 +136,64 @@ namespace Cripto.Game.Views.Components
             btn.style.backgroundColor = ButtonBg;
             line?.Add(btn);
             return btn;
+        }
+
+        private TextField CreateQuantityField()
+        {
+            var line = this[0];
+            var tf = new TextField("مقدار")
+            {
+                value = "0.1",
+                keyboardType = TouchScreenKeyboardType.NumberPad
+            };
+
+            // Outer field styling (container)
+            tf.style.width = new StyleLength(StyleKeyword.Auto);
+            tf.style.marginRight = 6;
+            tf.style.backgroundColor = new Color(0.08f, 0.08f, 0.08f, 1f);
+            tf.style.borderBottomColor = new Color(1f, 1f, 1f, 0.25f);
+            tf.style.borderTopColor = new Color(1f, 1f, 1f, 0.15f);
+            tf.style.borderLeftColor = new Color(1f, 1f, 1f, 0.15f);
+            tf.style.borderRightColor = new Color(1f, 1f, 1f, 0.15f);
+            tf.style.borderBottomWidth = 1;
+            tf.style.borderTopWidth = 1;
+            tf.style.borderLeftWidth = 1;
+            tf.style.borderRightWidth = 1;
+
+            // Label color ("Qty")
+            tf.labelElement.style.color = LightText;
+
+            // Inner text input styling (actual typing area)
+            var input = tf.Q(TextField.textInputUssName);
+            if (input != null)
+            {
+                input.style.color = LightText;
+                input.style.backgroundColor = new Color(0.12f, 0.12f, 0.12f, 1f);
+            }
+
+            line?.Add(tf);
+            return tf;
+        }
+
+        private void OnBuyClicked()
+        {
+            if (TryGetQuantity(out var qty)) _onBuy?.Invoke(_coinId, qty);
+        }
+
+        private void OnSellClicked()
+        {
+            if (TryGetQuantity(out var qty)) _onSell?.Invoke(_coinId, qty);
+        }
+
+        private bool TryGetQuantity(out decimal qty)
+        {
+            qty = 0m;
+            if (_qtyField == null) return false;
+            var s = _qtyField.value?.Trim();
+            if (string.IsNullOrEmpty(s)) return false;
+            if (!decimal.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out qty)) return false;
+            if (qty <= 0m) return false;
+            return true;
         }
 
         private Cripto.Game.Views.LineChartElement CreateChart()

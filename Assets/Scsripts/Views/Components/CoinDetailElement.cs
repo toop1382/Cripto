@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using UnityEngine;
 using UnityEngine.UIElements;
 using Cripto.Game.Models;
@@ -22,14 +23,15 @@ namespace Cripto.Game.Views.Components
         private readonly Label _holdings;
         private readonly Button _buyBtn;
         private readonly Button _sellBtn;
+        private readonly TextField _qtyField;
         private readonly Cripto.Game.Views.LineChartElement _chart;
 
         private string _coinId;
         private readonly List<float> _history;
         private readonly int _capacity;
         private Action _onBack;
-        private Action<string> _onBuy;
-        private Action<string> _onSell;
+        private Action<string, decimal> _onBuy;
+        private Action<string, decimal> _onSell;
 
         public new class UxmlFactory : UxmlFactory<CoinDetailElement, UxmlTraits> { }
 
@@ -46,14 +48,14 @@ namespace Cripto.Game.Views.Components
             Add(header);
 
             // Info row
-            var infoRow = CreateInfoRow(out _price, out _holdings, out _buyBtn, out _sellBtn);
+            var infoRow = CreateInfoRow(out _price, out _holdings, out _qtyField, out _buyBtn, out _sellBtn);
             Add(infoRow);
 
             // Chart
             _chart = CreateChart();
         }
 
-        public void Bind(string coinId, string name, CoinCategory category, Action<string> onBuy, Action<string> onSell, Action onBack)
+        public void Bind(string coinId, string name, CoinCategory category, Action<string, decimal> onBuy, Action<string, decimal> onSell, Action onBack)
         {
             _coinId = coinId;
             _title.text = $"{name} ({coinId})";
@@ -73,7 +75,7 @@ namespace Cripto.Game.Views.Components
 
         public void UpdateHoldings(decimal quantity)
         {
-            _holdings.text = $"Qty: {quantity}";
+            _holdings.text = $"مقدار: {quantity}";
         }
 
         /// <summary>
@@ -106,12 +108,12 @@ namespace Cripto.Game.Views.Components
             var header = new VisualElement { style = { flexDirection = FlexDirection.Row } };
             header.style.marginBottom = 6;
 
-            backBtn = new Button(() => _onBack?.Invoke()) { text = "← Back" };
+            backBtn = new Button(() => _onBack?.Invoke()) { text = "← بازگشت" };
             backBtn.style.color = Color.white;
             backBtn.style.backgroundColor = ButtonBg;
             header.Add(backBtn);
 
-            title = new Label("Coin")
+            title = new Label("ارز")
             {
                 style = { unityFontStyleAndWeight = FontStyle.Bold, fontSize = 18, flexGrow = 1f, unityTextAlign = TextAnchor.MiddleLeft }
             };
@@ -120,7 +122,7 @@ namespace Cripto.Game.Views.Components
             return header;
         }
 
-        private VisualElement CreateInfoRow(out Label price, out Label holdings, out Button buyBtn, out Button sellBtn)
+        private VisualElement CreateInfoRow(out Label price, out Label holdings, out TextField qtyField, out Button buyBtn, out Button sellBtn)
         {
             var infoRow = new VisualElement { style = { flexDirection = FlexDirection.Row } };
 
@@ -128,17 +130,42 @@ namespace Cripto.Game.Views.Components
             price.style.marginRight = 10;
             infoRow.Add(price);
 
-            holdings = new Label("Qty: 0") { style = { width = 160 } };
+            holdings = new Label("مقدار: 0") { style = { width = 160 } };
             holdings.style.marginRight = 10;
             infoRow.Add(holdings);
 
-            buyBtn = new Button(() => _onBuy?.Invoke(_coinId)) { text = "Buy 10" };
+            qtyField = new TextField("مقدار");
+            qtyField.value = "0.1";
+            qtyField.style.width = new StyleLength(StyleKeyword.Auto);
+            qtyField.style.marginRight = 10;
+            // Outer container uses dark background and subtle border
+            qtyField.style.backgroundColor = new Color(0.08f, 0.08f, 0.08f, 1f);
+            qtyField.style.borderBottomColor = new Color(1f, 1f, 1f, 0.25f);
+            qtyField.style.borderTopColor = new Color(1f, 1f, 1f, 0.15f);
+            qtyField.style.borderLeftColor = new Color(1f, 1f, 1f, 0.15f);
+            qtyField.style.borderRightColor = new Color(1f, 1f, 1f, 0.15f);
+            qtyField.style.borderBottomWidth = 1;
+            qtyField.style.borderTopWidth = 1;
+            qtyField.style.borderLeftWidth = 1;
+            qtyField.style.borderRightWidth = 1;
+            // Label color ("Qty")
+            qtyField.labelElement.style.color = LightText;
+            // Inner text input styling (actual typing area)
+            var input = qtyField.Q(TextField.textInputUssName);
+            if (input != null)
+            {
+                input.style.color = LightText;
+                input.style.backgroundColor = new Color(0.12f, 0.12f, 0.12f, 1f);
+            }
+            infoRow.Add(qtyField);
+
+            buyBtn = new Button(OnBuyClicked) { text = "خرید" };
             buyBtn.style.marginRight = 10;
             buyBtn.style.color = Color.white;
             buyBtn.style.backgroundColor = ButtonBg;
             infoRow.Add(buyBtn);
 
-            sellBtn = new Button(() => _onSell?.Invoke(_coinId)) { text = "Sell 10" };
+            sellBtn = new Button(OnSellClicked) { text = "فروش" };
             sellBtn.style.color = Color.white;
             sellBtn.style.backgroundColor = ButtonBg;
             infoRow.Add(sellBtn);
@@ -170,6 +197,27 @@ namespace Cripto.Game.Views.Components
             if (_history.Count <= _capacity) return;
             int remove = _history.Count - _capacity;
             _history.RemoveRange(0, remove);
+        }
+
+        private bool TryGetQuantity(out decimal qty)
+        {
+            qty = 0m;
+            if (_qtyField == null) return false;
+            var s = _qtyField.value?.Trim();
+            if (string.IsNullOrEmpty(s)) return false;
+            if (!decimal.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out qty)) return false;
+            if (qty <= 0m) return false;
+            return true;
+        }
+
+        private void OnBuyClicked()
+        {
+            if (TryGetQuantity(out var qty)) _onBuy?.Invoke(_coinId, qty);
+        }
+
+        private void OnSellClicked()
+        {
+            if (TryGetQuantity(out var qty)) _onSell?.Invoke(_coinId, qty);
         }
 
         private static Color GetColorForCategory(CoinCategory cat)

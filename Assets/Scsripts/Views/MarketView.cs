@@ -66,6 +66,7 @@ namespace Cripto.Game.Views
         }
 
         #region Wiring / Subscriptions
+
         private void SubscribeToViewModel()
         {
             _coinsSub = _vm.Coins.Subscribe(OnCoins);
@@ -90,9 +91,11 @@ namespace Cripto.Game.Views
             _walletSub = null;
             _portfolioSub = null;
         }
+
         #endregion
 
         #region UI Build
+
         private void SetupDocumentAndUI()
         {
             _document = GetComponent<UIDocument>() ?? gameObject.AddComponent<UIDocument>();
@@ -109,6 +112,14 @@ namespace Cripto.Game.Views
             _root.style.paddingBottom = 8;
             _root.style.backgroundColor = Color.black; // dark backdrop on root
             AddBackdrop(_root);
+
+            // Attach RTL/advanced text stylesheet and class to fix Persian shaping
+            var rtlSS = Resources.Load<StyleSheet>("UIToolkit/common");
+            if (rtlSS != null)
+            {
+                _root.styleSheets.Add(rtlSS);
+                _root.EnableInClassList("labelText", true);
+            }
 
             _header = new WalletHeaderElement();
             _root.Add(_header);
@@ -147,9 +158,11 @@ namespace Cripto.Game.Views
             };
             root.Add(backdrop);
         }
+
         #endregion
 
         #region Coins updates
+
         private void HandleCoinsUpdate(IReadOnlyList<Coin> coins)
         {
             if (_content == null) return;
@@ -177,18 +190,23 @@ namespace Cripto.Game.Views
             {
                 _detailPage.UpdatePrice(coin.Price);
             }
+
             return true;
         }
+
         #endregion
 
         #region Header / Wallet
+
         private void UpdateWallet()
         {
             _header?.SetWallet(_wallet);
         }
+
         #endregion
 
         #region Page switching
+
         private void ShowListPage()
         {
             _selectedCoinId = null;
@@ -206,8 +224,14 @@ namespace Cripto.Game.Views
                 coin.Id,
                 coin.Name,
                 coin.Category,
-                onBuy: id => { if (!_vm.Buy(id, 10m, out var err) && logToConsole) Debug.LogWarning($"Buy failed: {err}"); },
-                onSell: id => { if (!_vm.Sell(id, 10m, out var err) && logToConsole) Debug.LogWarning($"Sell failed: {err}"); },
+                onBuy: (id, qty) =>
+                {
+                    if (!_vm.Buy(id, qty, out var err) && logToConsole) Debug.LogWarning($"خرید ناموفق: {err}");
+                },
+                onSell: (id, qty) =>
+                {
+                    if (!_vm.Sell(id, qty, out var err) && logToConsole) Debug.LogWarning($"فروش ناموفق: {err}");
+                },
                 onBack: ShowListPage
             );
 
@@ -224,9 +248,11 @@ namespace Cripto.Game.Views
             _content.Clear();
             _content.Add(_detailPage);
         }
+
         #endregion
 
         #region Rows / Holdings
+
         private void EnsureCoinRow(Coin coin)
         {
             if (_rows.ContainsKey(coin.Id)) return;
@@ -236,8 +262,14 @@ namespace Cripto.Game.Views
                 coin.Id,
                 coin.Name,
                 coin.Category,
-                onBuy: id => { if (!_vm.Buy(id, 10m, out var err) && logToConsole) Debug.LogWarning($"Buy failed: {err}"); },
-                onSell: id => { if (!_vm.Sell(id, 10m, out var err) && logToConsole) Debug.LogWarning($"Sell failed: {err}"); }
+                onBuy: (id, qty) =>
+                {
+                    if (!_vm.Buy(id, qty, out var err) && logToConsole) Debug.LogWarning($"خرید ناموفق: {err}");
+                },
+                onSell: (id, qty) =>
+                {
+                    if (!_vm.Sell(id, qty, out var err) && logToConsole) Debug.LogWarning($"فروش ناموفق: {err}");
+                }
             );
 
             // Initial holdings set if already available
@@ -251,6 +283,16 @@ namespace Cripto.Game.Views
             row.RegisterCallback<ClickEvent>(evt =>
             {
                 if (evt.target is Button) return; // ignore button clicks
+                if (evt.target is VisualElement ve)
+                {
+                    var cur = ve;
+                    while (cur != null)
+                    {
+                        if (cur is TextField) return; // ignore clicks inside text fields
+                        cur = cur.parent;
+                    }
+                }
+
                 var current = _lastCoins.FirstOrDefault(c => c.Id == coin.Id);
                 if (current != null) ShowDetailPage(current);
             });
@@ -279,17 +321,21 @@ namespace Cripto.Game.Views
             {
                 if (_portfolio[i].CoinId == coinId) return _portfolio[i].Quantity;
             }
+
             return 0m;
         }
+
         #endregion
 
         #region Logging
+
         private void LogTick(IReadOnlyList<Coin> coins)
         {
             if (!logToConsole) return;
             var top = string.Join(", ", coins.Take(5).Select(c => $"{c.Name}:{c.Price:F6}"));
             Debug.Log($"[MarketView] Tick => {top}");
         }
+
         #endregion
     }
 }

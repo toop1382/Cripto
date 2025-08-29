@@ -16,7 +16,7 @@ namespace Cripto.Game.Views.Components
             style.flexDirection = FlexDirection.Row;
             style.marginBottom = 6;
 
-            _title = new Label("Crypto Market")
+            _title = new Label("بازار کریپتو")
             {
                 style =
                 {
@@ -28,7 +28,7 @@ namespace Cripto.Game.Views.Components
             _title.style.color = Color.white;
             Add(_title);
 
-            _wallet = new Label("Wallet: ...")
+            _wallet = new Label("کیف پول: ...")
             {
                 style = { unityTextAlign = TextAnchor.MiddleRight }
             };
@@ -43,7 +43,7 @@ namespace Cripto.Game.Views.Components
 
         public void SetWallet(decimal balance)
         {
-            _wallet.text = $"Wallet: {balance:F2} USD";
+            _wallet.text = $"کیف پول: {balance:F2} دلار";
         }
     }
 }
