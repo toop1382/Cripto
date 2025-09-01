@@ -1,3 +1,4 @@
+using Cripto.Game.Gameplay.Character;
 using UnityEngine;
 using VContainer;
 using VContainer.Unity;
@@ -7,6 +8,8 @@ using Cripto.Game.Views;
 
 public class GAmeInstaller : LifetimeScope
 {
+    [SerializeField] private Joystick joystick;
+
     protected override void Configure(IContainerBuilder builder)
     {
         // Services (Singleton)
@@ -19,5 +22,7 @@ public class GAmeInstaller : LifetimeScope
 
         // Views in scene hierarchy will get injected
         builder.RegisterComponentInHierarchy<MarketView>();
+        builder.RegisterComponentInHierarchy<TopDownCharacterController>();
+        builder.RegisterInstance(joystick);
     }
 }
