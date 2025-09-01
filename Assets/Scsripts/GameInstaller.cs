@@ -12,6 +12,7 @@ public class GAmeInstaller : LifetimeScope
 
     protected override void Configure(IContainerBuilder builder)
     {
+        Application.targetFrameRate = 60;
         // Services (Singleton)
         builder.Register<IMarketService, MarketService>(Lifetime.Singleton);
         builder.Register<ITradingService, TradingService>(Lifetime.Singleton);
