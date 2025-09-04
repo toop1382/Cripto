@@ -32,16 +32,14 @@ namespace Cripto.Game.Gameplay.Character
 
         [Header("Animation")] public Animator animator; // Optional
         public string speedParam = "Speed";
-        public string isMovingParam = "IsMoving";
-        public string moveXParam = "MoveX";
-        public string moveYParam = "MoveY";
+        
 
         private Rigidbody _rb3D;
         private CharacterController _cc;
         private SpriteRenderer _sprite;
 
         // Animator hashes (if parameters exist)
-        private int _speedHash = -1, _isMovingHash = -1, _moveXHash = -1, _moveYHash = -1;
+        private int _speedHash = -1;
 
         [Inject] private Joystick joystick;
 
@@ -61,9 +59,7 @@ namespace Cripto.Game.Gameplay.Character
             // We don't have a way to query if a param exists cheaply at runtime, so we compute hashes.
             // Setting nonexistent hashes is harmless; Animator ignores them. To be safe, allow disabling by empty name.
             if (!string.IsNullOrEmpty(speedParam)) _speedHash = Animator.StringToHash(speedParam);
-            if (!string.IsNullOrEmpty(isMovingParam)) _isMovingHash = Animator.StringToHash(isMovingParam);
-            if (!string.IsNullOrEmpty(moveXParam)) _moveXHash = Animator.StringToHash(moveXParam);
-            if (!string.IsNullOrEmpty(moveYParam)) _moveYHash = Animator.StringToHash(moveYParam);
+
         }
 
         void Update()
@@ -107,9 +103,6 @@ namespace Cripto.Game.Gameplay.Character
             {
                 float speed = Mathf.Clamp01(input.magnitude);
                 if (_speedHash != -1) animator.SetFloat(_speedHash, speed);
-                if (_isMovingHash != -1) animator.SetBool(_isMovingHash, speed > 0.01f);
-                if (_moveXHash != -1) animator.SetFloat(_moveXHash, input.x);
-                if (_moveYHash != -1) animator.SetFloat(_moveYHash, input.y);
             }
         }
 

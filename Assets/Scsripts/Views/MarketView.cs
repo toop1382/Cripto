@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Cripto.Game.Models;
@@ -28,6 +29,7 @@ namespace Cripto.Game.Views
         // UI Toolkit
         private UIDocument _document;
         private VisualElement _root;
+        private Button _backButton;
         private WalletHeaderElement _header;
         private VisualElement _content; // swaps between list and detail pages
         private ScrollView _coinsScroll;
@@ -46,14 +48,14 @@ namespace Cripto.Game.Views
             _vm = vm;
         }
 
-        private void OnEnable()
+        private void Awake()
         {
             if (_vm == null) return;
             SetupDocumentAndUI();
             SubscribeToViewModel();
         }
 
-        private void OnDisable()
+        private void OnDestroy()
         {
             UnsubscribeFromViewModel();
         }
@@ -70,11 +72,23 @@ namespace Cripto.Game.Views
         private void SubscribeToViewModel()
         {
             _coinsSub = _vm.Coins.Subscribe(OnCoins);
+
+            // Prime initial values so UI doesn't show zero before first emissions
+            try
+            {
+                _wallet = _vm.GetWalletBalance();
+                _portfolio = _vm.GetPortfolio();
+            }
+            catch { }
+            UpdateWallet();
+            UpdateHoldingsForAll();
+
             _walletSub = _vm.Wallet.Subscribe(v =>
             {
                 _wallet = v;
                 UpdateWallet();
             });
+
             _portfolioSub = _vm.Portfolio.Subscribe(p =>
             {
                 _portfolio = p;
@@ -105,6 +119,7 @@ namespace Cripto.Game.Views
         private void BuildUI()
         {
             _root = _document.rootVisualElement;
+            _root.Clear();
             _root.style.flexDirection = FlexDirection.Column;
             _root.style.paddingLeft = 8;
             _root.style.paddingRight = 8;
@@ -120,6 +135,12 @@ namespace Cripto.Game.Views
                 _root.styleSheets.Add(rtlSS);
                 _root.EnableInClassList("labelText", true);
             }
+
+            // Back button at the top
+            _backButton = new Button(DisableView) { text = "بازگشت" };
+            _backButton.style.alignSelf = Align.FlexStart;
+            _backButton.style.marginBottom = 6;
+            _root.Add(_backButton);
 
             _header = new WalletHeaderElement();
             _root.Add(_header);
@@ -337,5 +358,15 @@ namespace Cripto.Game.Views
         }
 
         #endregion
+
+        public void DisableView()
+        {
+            _root.visible = false;
+        }
+
+        public void EnableView()
+        {
+            _root.visible = true;
+        }
     }
 }

@@ -34,6 +34,10 @@ namespace Cripto.Game.ViewModels
             Debug.Log("MarketViewModel initialized.");
         }
 
+        // Synchronous accessors to prime UI with current values before streams emit
+        public decimal GetWalletBalance() => _tradingService.GetWalletBalance();
+        public IReadOnlyList<PortfolioPosition> GetPortfolio() => _tradingService.GetPortfolio();
+
         public bool Buy(string coinId, decimal qty, out string error) => _tradingService.Buy(coinId, qty, out error);
         public bool Sell(string coinId, decimal qty, out string error) => _tradingService.Sell(coinId, qty, out error);
         public void Hold() => _tradingService.Hold();
