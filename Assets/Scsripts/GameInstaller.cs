@@ -16,10 +16,13 @@ public class GAmeInstaller : LifetimeScope
         // Services (Singleton)
         builder.Register<IMarketService, MarketService>(Lifetime.Singleton);
         builder.Register<ITradingService, TradingService>(Lifetime.Singleton);
+        builder.Register<IWelcomeTutorialService, WelcomeTutorialService>(Lifetime.Singleton);
+        builder.RegisterComponentInHierarchy<WelcomeTutorialView>();
 
         // ViewModels (Scoped) and initialize on scope start
         builder.Register<MarketViewModel>(Lifetime.Scoped);
         builder.RegisterEntryPoint<MarketViewModel>(Lifetime.Scoped);
+        builder.RegisterEntryPoint<StartupTutorialEntryPoint>(Lifetime.Scoped);
 
         // Views in scene hierarchy will get injected
         builder.RegisterComponentInHierarchy<MarketView>();
