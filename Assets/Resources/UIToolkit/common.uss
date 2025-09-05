@@ -1,4 +1,4 @@
 * {
     -unity-text-generator: advanced;
-    -unity-font-definition: url("project://database/Library/unity%20default%20resources?fileID=10102&guid=0000000000000000e000000000000000&type=0#LegacyRuntime");
+    -unity-font-definition: url("project://database/Assets/RTLTMPro/Fonts/segoeuib.ttf?fileID=12800000&guid=d1bdc9dff43912043a4b63e610e99266&type=3#segoeuib");
 }
