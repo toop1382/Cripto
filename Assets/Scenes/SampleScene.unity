@@ -1976,7 +1976,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   logToConsole: 0
-  historyCapacity: 200
+  historyCapacity: 50
 --- !u!114 &1166082081
 MonoBehaviour:
   m_ObjectHideFlags: 0
