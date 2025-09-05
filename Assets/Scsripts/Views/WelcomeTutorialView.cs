@@ -19,10 +19,10 @@ namespace Cripto.Game.Views
         private Button _nextButton;
         private VisualElement _guideBanner;
         private Label _guideText;
-        private Label _guideArrow;
         private int _stepIndex;
         private List<(string title, string body)> _steps;
         private IWelcomeTutorialService _service;
+        private bool _isIntro;
 
         public void Construct(IWelcomeTutorialService service)
         {
@@ -77,13 +77,11 @@ namespace Cripto.Game.Views
                 }
             };
 
-            _guideText = new Label("برای شروع، در محیط به سمت کامپیوتر حرکت کن ✨")
+            _guideText = new Label("برای شروع، در محیط به سمت کامپیوتر حرکت کن.")
             {
                 style = { color = Color.white, unityTextAlign = TextAnchor.MiddleRight, fontSize = 16 }
             };
-            _guideArrow = new Label("⬆") { style = { color = new Color(0.5f, 0.8f, 1f, 1f), fontSize = 24 } };
             _guideBanner.Add(_guideText);
-            _guideBanner.Add(_guideArrow);
 
             // Tutorial panel (center)
             _panel = new VisualElement
@@ -147,20 +145,36 @@ namespace Cripto.Game.Views
             _root.Add(_guideBanner);
 
             // Steps content (Farsi)
+            // After Intro, show anti‑fraud awareness tips specific to crypto safety.
             _steps = new List<(string title, string body)>
             {
-                ("خوش آمدید!",
-                    "به بازی کریپتو خوش آمدید. در این بازی می‌توانید سکه‌ها را مشاهده کنید و اقدام به خرید و فروش کنید."),
-                ("آموزش کوتاه",
-                    "از لیست سکه‌ها یکی را انتخاب کنید تا جزئیات آن را ببینید. با دکمهٔ خرید یا فروش مقدار مورد نظر را وارد کنید."),
-                ("نکته",
-                    "موجودی کیف پول شما در بالای صفحه نمایش داده می‌شود. برای برگشت به لیست، دکمهٔ بازگشت را بزنید.")
+                ("هشدار: سودِ قطعی؟",
+                    "هرکس سود تضمینی می‌دهد، احتمالاً قصد کلاهبرداری دارد. همیشه تحقیق مستقل انجام بده و از منابع معتبر استفاده کن."),
+                ("کلید خصوصی تو خصوصی است",
+                    "هیچ‌وقت عبارت بازیابی (Seed Phrase) یا کلید خصوصی‌ات را در اختیار کسی قرار نده. حتی تیم‌های پشتیبانی واقعی هم آن را نمی‌خواهند."),
+                ("لینک‌ها و قراردادها را بررسی کن",
+                    "قبل از کلیک یا اتصال کیف‌پول، آدرس سایت و قرارداد را دقیق چک کن. از دامنه‌های جعلی، ایردراپ‌های مشکوک و لینک‌های ناشناس دوری کن.")
             };
+        }
+
+        // Show the intro panel first (what this game is).
+        public void ShowIntro()
+        {
+            _isIntro = true;
+            _root.visible = true;
+            _guideBanner.style.display = DisplayStyle.None;
+            _panel.style.display = DisplayStyle.Flex;
+
+            _title.text = "خوش آمدید!";
+            _body.text =
+                "این تجربه فقط برای آموزش و آگاهی است؛ هدف ما کاهش کلاهبرداری در دنیای ارزهای دیجیتال با ارائه نکات ایمنی و شبیه‌سازی موقعیت‌هاست. لطفاً با دقت بخوان ";
+            _nextButton.text = "ادامه";
         }
 
         // Show only the guide banner
         public void ShowGuide()
         {
+            _isIntro = false;
             _root.visible = true;
             _guideBanner.style.display = DisplayStyle.Flex;
             _panel.style.display = DisplayStyle.None;
@@ -169,6 +183,7 @@ namespace Cripto.Game.Views
         // Show the step-by-step tutorial
         public void ShowSteps()
         {
+            _isIntro = false;
             _stepIndex = 0;
             ApplyStep();
             _root.visible = true;
@@ -178,6 +193,13 @@ namespace Cripto.Game.Views
 
         private void OnNextClicked()
         {
+            if (_isIntro)
+            {
+                // After intro, switch to guide banner (don’t mark seen yet)
+                ShowGuide();
+                return;
+            }
+
             _stepIndex++;
             if (_stepIndex >= _steps.Count)
             {

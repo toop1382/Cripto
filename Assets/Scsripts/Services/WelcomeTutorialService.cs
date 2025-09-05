@@ -29,7 +29,7 @@ namespace Cripto.Game.Services
             if (HasSeen) return;
             EnsureView();
             _waitingForComputer = true;
-            _view.ShowGuide();
+            _view.ShowIntro();
         }
 
         public void NotifyReachedComputer()
