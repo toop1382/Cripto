@@ -6,16 +6,20 @@ using Cripto.Game.Services;
 namespace Cripto.Game.Views
 {
     /// <summary>
-    /// Simple full-screen UI Toolkit overlay that shows a welcome and a short tutorial in Persian.
-    /// Instantiated and controlled by WelcomeTutorialService.
+    /// Full-screen UI Toolkit overlay: first shows a guide banner to walk to the computer,
+    /// then shows a short tutorial (first run only).
     /// </summary>
     public class WelcomeTutorialView : MonoBehaviour
     {
         private UIDocument _document;
         private VisualElement _root;
+        private VisualElement _panel;
         private Label _title;
         private Label _body;
         private Button _nextButton;
+        private VisualElement _guideBanner;
+        private Label _guideText;
+        private Label _guideArrow;
         private int _stepIndex;
         private List<(string title, string body)> _steps;
         private IWelcomeTutorialService _service;
@@ -40,32 +44,66 @@ namespace Cripto.Game.Views
             _root.style.top = 0;
             _root.style.right = 0;
             _root.style.bottom = 0;
-            _root.style.backgroundColor = new Color(0, 0, 0, 0.85f);
+            _root.style.backgroundColor = new Color(0, 0, 0, 0.6f);
             _root.style.flexDirection = FlexDirection.Column;
             _root.style.alignItems = Align.Center;
-            _root.style.justifyContent = Justify.Center;
+            _root.style.justifyContent = Justify.FlexEnd;
             _root.visible = false;
 
             // Load shared stylesheet for Persian/RTL helpers if present
             var ss = Resources.Load<StyleSheet>("UIToolkit/common");
             if (ss != null) _root.styleSheets.Add(ss);
 
-            var container = new VisualElement
+            // Guide banner (bottom)
+            _guideBanner = new VisualElement
             {
                 style =
                 {
-                    maxWidth = 600,
+                    width = Length.Percent(100),
+                    maxWidth = 800,
+                    marginBottom = 12,
                     paddingLeft = 16,
                     paddingRight = 16,
-                    paddingTop = 16,
-                    paddingBottom = 16,
-                    backgroundColor = new Color(0.1f, 0.1f, 0.1f, 0.97f),
-                    borderTopLeftRadius = 8,
-                    borderTopRightRadius = 8,
-                    borderBottomLeftRadius = 8,
-                    borderBottomRightRadius = 8,
+                    paddingTop = 10,
+                    paddingBottom = 10,
+                    backgroundColor = new Color(0.08f, 0.08f, 0.12f, 0.95f),
+                    borderTopLeftRadius = 10,
+                    borderTopRightRadius = 10,
+                    borderBottomLeftRadius = 10,
+                    borderBottomRightRadius = 10,
+                    flexDirection = FlexDirection.Row,
+                    alignItems = Align.Center,
+                    justifyContent = Justify.SpaceBetween
+                }
+            };
+
+            _guideText = new Label("برای شروع، در محیط به سمت کامپیوتر حرکت کن ✨")
+            {
+                style = { color = Color.white, unityTextAlign = TextAnchor.MiddleRight, fontSize = 16 }
+            };
+            _guideArrow = new Label("⬆") { style = { color = new Color(0.5f, 0.8f, 1f, 1f), fontSize = 24 } };
+            _guideBanner.Add(_guideText);
+            _guideBanner.Add(_guideArrow);
+
+            // Tutorial panel (center)
+            _panel = new VisualElement
+            {
+                style =
+                {
+                    maxWidth = 640,
+                    marginBottom = 80,
+                    paddingLeft = 18,
+                    paddingRight = 18,
+                    paddingTop = 18,
+                    paddingBottom = 18,
+                    backgroundColor = new Color(0.12f, 0.12f, 0.16f, 0.98f),
+                    borderTopLeftRadius = 12,
+                    borderTopRightRadius = 12,
+                    borderBottomLeftRadius = 12,
+                    borderBottomRightRadius = 12,
                     flexDirection = FlexDirection.Column,
-                    alignItems = Align.Stretch
+                    alignItems = Align.Stretch,
+                    display = DisplayStyle.None
                 }
             };
 
@@ -74,8 +112,9 @@ namespace Cripto.Game.Views
                 style =
                 {
                     unityFontStyleAndWeight = FontStyle.Bold,
-                    fontSize = 22,
-                    marginBottom = 8, color = Color.white,
+                    fontSize = 24,
+                    marginBottom = 10,
+                    color = Color.white,
                     unityTextAlign = TextAnchor.MiddleCenter
                 }
             };
@@ -86,18 +125,26 @@ namespace Cripto.Game.Views
                 {
                     whiteSpace = WhiteSpace.Normal,
                     unityTextAlign = TextAnchor.UpperRight,
-                    marginBottom = 16, color = Color.white
+                    marginBottom = 16,
+                    color = new Color(0.9f, 0.9f, 0.95f, 1f)
                 }
             };
 
             _nextButton = new Button(OnNextClicked) { text = "ادامه" };
-            _nextButton.style.height = 36;
+            _nextButton.style.height = 38;
+            _nextButton.style.backgroundColor = new Color(0.2f, 0.5f, 0.9f, 1f);
+            _nextButton.style.color = Color.white;
+            _nextButton.style.borderTopLeftRadius = 8;
+            _nextButton.style.borderTopRightRadius = 8;
+            _nextButton.style.borderBottomLeftRadius = 8;
+            _nextButton.style.borderBottomRightRadius = 8;
 
-            container.Add(_title);
-            container.Add(_body);
-            container.Add(_nextButton);
+            _panel.Add(_title);
+            _panel.Add(_body);
+            _panel.Add(_nextButton);
 
-            _root.Add(container);
+            _root.Add(_panel);
+            _root.Add(_guideBanner);
 
             // Steps content (Farsi)
             _steps = new List<(string title, string body)>
@@ -111,11 +158,22 @@ namespace Cripto.Game.Views
             };
         }
 
-        public void Show()
+        // Show only the guide banner
+        public void ShowGuide()
+        {
+            _root.visible = true;
+            _guideBanner.style.display = DisplayStyle.Flex;
+            _panel.style.display = DisplayStyle.None;
+        }
+
+        // Show the step-by-step tutorial
+        public void ShowSteps()
         {
             _stepIndex = 0;
             ApplyStep();
             _root.visible = true;
+            _guideBanner.style.display = DisplayStyle.None;
+            _panel.style.display = DisplayStyle.Flex;
         }
 
         private void OnNextClicked()
@@ -124,6 +182,7 @@ namespace Cripto.Game.Views
             if (_stepIndex >= _steps.Count)
             {
                 _root.visible = false;
+                _panel.style.display = DisplayStyle.None;
                 _service?.MarkSeen();
                 return;
             }

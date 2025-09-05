@@ -1,6 +1,8 @@
 ﻿using System;
 using UnityEngine;
 using UnityEngine.UI;
+using VContainer;
+using Cripto.Game.Services;
 
 namespace Cripto.Game.Views
 {
@@ -8,26 +10,35 @@ namespace Cripto.Game.Views
     {
         [SerializeField] private Button button;
         [SerializeField] private MarketView _marketView;
+        [Inject] private IWelcomeTutorialService _tutorialService;
 
         private void Start()
         {
-            _marketView.DisableView();
+            if (_marketView != null)
+                _marketView.DisableView();
+
+            if (button != null)
+                button.gameObject.SetActive(false);
         }
 
         private void OnTriggerEnter(Collider other)
         {
-            button.gameObject.SetActive(true);
+            if (button != null)
+                button.gameObject.SetActive(true);
+
+            // Notify tutorial that player reached the computer
+            _tutorialService?.NotifyReachedComputer();
         }
 
         private void OnTriggerExit(Collider other)
         {
-            button.gameObject.SetActive(false);
+            if (button != null)
+                button.gameObject.SetActive(false);
         }
 
         public void Click()
         {
-            _marketView.EnableView();
-
+            _marketView?.EnableView();
         }
     }
 }

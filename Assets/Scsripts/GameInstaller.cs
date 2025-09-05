@@ -26,6 +26,7 @@ public class GAmeInstaller : LifetimeScope
 
         // Views in scene hierarchy will get injected
         builder.RegisterComponentInHierarchy<MarketView>();
+        builder.RegisterComponentInHierarchy<MarketTriggerButton>();
         builder.RegisterComponentInHierarchy<TopDownCharacterController>();
         builder.RegisterInstance(joystick);
     }
